@@ -3,6 +3,9 @@ import telebot
 import urllib.request
 import zipfile2
 import os
+import time
+
+from PIL import Image
 
 def remove_stickers():
     if os.path.exists('stickers.zip'):
@@ -37,19 +40,23 @@ def begin(message):
     out = open('sticker'+str(numbers_file)+'.webp', "wb")
     out.write(sticker)
     out.close
+    with Image.open('sticker'+str(numbers_file)+'.webp').convert("RGB") as png:
+        png.save('sticker'+str(numbers_file)+'.png',"png")
+    
     numbers_file += 1
     emoji.append(r.emoji)
 
 
 @bot.message_handler(func=lambda message: message.text == "STOP")
 def send_something(message):
+    time.sleep(7)
     try:
         remove_stickers()
         global numbers_file, emoji
         b=numbers_file-1
         while numbers_file-1:
             stickers_zip = zipfile2.ZipFile('stickers.zip', 'a')
-            stickers_zip.write('sticker'+str(numbers_file-1)+'.webp', compress_type=zipfile2.ZIP_DEFLATED)
+            stickers_zip.write('sticker'+str(numbers_file-1)+'.png', compress_type=zipfile2.ZIP_DEFLATED)
             stickers_zip.close()
             numbers_file -= 1
         doc = open('stickers.zip', 'rb')
@@ -57,6 +64,7 @@ def send_something(message):
         bot.send_message(message.chat.id, emoji if len(emoji)==1 else ' '.join(emoji))
         emoji = []
         while b:
+            os.remove('sticker'+str(b)+'.png')
             os.remove('sticker'+str(b)+'.webp')
             b=b-1
     except:
